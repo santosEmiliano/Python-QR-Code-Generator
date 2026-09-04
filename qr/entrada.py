@@ -7,10 +7,17 @@ version: eso es la etapa 2 (version.py).
 
 from __future__ import annotations
 
-from .contrato import Modo, TextoNoValidoParaModo
+from dataclasses import dataclass
+
+from .contrato import Modo, ModoPedido, ParametroInvalido, TextoNoValidoParaModo
 from .tablas import CARACTERES_ALFANUMERICOS
 
-__all__ = ["detectar_modo", "validar_texto_para_modo"]
+__all__ = [
+    "detectar_modo",
+    "validar_texto_para_modo",
+    "AnalisisTexto",
+    "analizar_texto",
+]
 
 # Conjuntos para chequear pertenencia caracter por caracter.
 _DIGITOS = frozenset("0123456789")
@@ -50,3 +57,45 @@ def validar_texto_para_modo(texto: str, modo: Modo) -> None:
         raise TextoNoValidoParaModo(
             f"el texto tiene caracteres que el modo {modo.value} no admite: {sobrantes!r}"
         )
+
+
+@dataclass(frozen=True)
+class AnalisisTexto:
+    """Salida de la etapa 1. La consume la etapa 2 (version.py)."""
+
+    modo: Modo                # el modo ya resuelto (nunca "auto")
+    texto: str                # el texto original, sin tocar
+    cantidad_caracteres: int  # lo que va en el indicador de cantidad del mensaje:
+                              #   numerico / alfanumerico -> nro de caracteres
+                              #   byte                    -> nro de bytes UTF-8
+
+
+def analizar_texto(texto: str, modo: ModoPedido = "auto") -> AnalisisTexto:
+    """Resuelve el modo definitivo y cuenta los caracteres del texto.
+
+    - modo "auto": se detecta con detectar_modo().
+    - modo concreto: se valida que el texto entre en ese modo, Si no,
+      TextoNoValidoParaModo. Un nombre de modo desconocido -> ParametroInvalido.
+
+    `cantidad_caracteres` es lo que despues arma el indicador de cantidad del
+    mensaje: cantidad de caracteres para numerico y alfanumerico, cantidad de
+    bytes UTF-8 para byte.
+    """
+    if modo == "auto":
+        modo_real = detectar_modo(texto)
+    else:
+        try:
+            modo_real = Modo(modo)
+        except ValueError:
+            raise ParametroInvalido(
+                f"modo desconocido: {modo!r} "
+                f"(esperado 'auto', 'numerico', 'alfanumerico' o 'byte')"
+            ) from None
+        validar_texto_para_modo(texto, modo_real)
+
+    if modo_real == Modo.BYTE:
+        cantidad = len(texto.encode("utf-8"))
+    else:
+        cantidad = len(texto)
+
+    return AnalisisTexto(modo=modo_real, texto=texto, cantidad_caracteres=cantidad)
