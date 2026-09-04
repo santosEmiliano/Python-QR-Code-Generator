@@ -7,10 +7,10 @@ version: eso es la etapa 2 (version.py).
 
 from __future__ import annotations
 
-from .contrato import Modo
+from .contrato import Modo, TextoNoValidoParaModo
 from .tablas import CARACTERES_ALFANUMERICOS
 
-__all__ = ["detectar_modo"]
+__all__ = ["detectar_modo", "validar_texto_para_modo"]
 
 # Conjuntos para chequear pertenencia caracter por caracter.
 _DIGITOS = frozenset("0123456789")
@@ -30,3 +30,23 @@ def detectar_modo(texto: str) -> Modo:
     if all(caracter in _ALFANUMERICOS for caracter in texto):
         return Modo.ALFANUMERICO
     return Modo.BYTE
+
+
+def validar_texto_para_modo(texto: str, modo: Modo) -> None:
+    """Verifica que 'texto' se pueda codificar en 'modo'.
+
+    No devuelve nada. Si el texto tiene algun caracter que ese modo no admite,
+    lanza TextoNoValidoParaModo nombrando los caracteres que sobran.
+
+    Modo.BYTE admite cualquier texto (se codifica como bytes UTF-8), asi que
+    nunca falla. Se usa cuando el usuario forzo un modo concreto en vez de
+    dejar "auto".
+    """
+    if modo == Modo.BYTE:
+        return
+    permitidos = _DIGITOS if modo == Modo.NUMERICO else _ALFANUMERICOS
+    sobrantes = sorted({caracter for caracter in texto if caracter not in permitidos})
+    if sobrantes:
+        raise TextoNoValidoParaModo(
+            f"el texto tiene caracteres que el modo {modo.value} no admite: {sobrantes!r}"
+        )
