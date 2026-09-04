@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+
+# Herramientas
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editores / SO
+.vscode/
+.idea/
+.DS_Store
+
+# Salidas generadas por el propio programa (QR de prueba, reportes)
+salida/
+*.qr.svg
+*.qr.png

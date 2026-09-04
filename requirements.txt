@@ -1,0 +1,8 @@
+# El core es Python puro y no tiene dependencias obligatorias.
+# Requiere Python 3.10 o superior (se usan  int | None  y  match).
+#
+# Pillow se usa UNICAMENTE para exportar PNG (render_png, etapa 8 / P5).
+# El render SVG y el de terminal no necesitan nada.
+# Descomentar solo si vas a trabajar en la exportacion PNG:
+#
+# Pillow>=10.0
