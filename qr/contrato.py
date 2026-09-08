@@ -63,7 +63,6 @@ class Modo(str, Enum):
     BYTE = "byte"                  # cualquier otra cosa (minusculas, acentos,
                                    # emojis...): el texto se toma como bytes UTF-8
 
-
 class NivelCorreccion(str, Enum):
     """Cuanto dano puede sufrir el QR y aun asi leerse.
 
@@ -75,7 +74,6 @@ class NivelCorreccion(str, Enum):
     M = "M"  # ~15 %
     Q = "Q"  # ~25 %
     H = "H"  # ~30 %
-
 
 # Modo que puede pedir el usuario. "auto" no es un Modo real: le dice a P1 que
 # elija solo el modo mas compacto que sirva para ese texto.
