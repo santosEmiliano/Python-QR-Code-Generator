@@ -7,8 +7,15 @@ para que P2 le calcule el respaldo.
 
 from __future__ import annotations
 
-from .contrato import Modo, NivelCorreccion, ParametroInvalido, TextoNoEntra
-from .entrada import AnalisisTexto
+from .contrato import (
+    EntradaUsuario,
+    MensajeCodificado,
+    Modo,
+    NivelCorreccion,
+    ParametroInvalido,
+    TextoNoEntra,
+)
+from .entrada import AnalisisTexto, analizar_texto
 from .tablas import (
     CARACTERES_ALFANUMERICOS,
     bits_cuenta_caracteres,
@@ -21,6 +28,7 @@ __all__ = [
     "elegir_version",
     "armar_bits",
     "agrupar_en_bytes",
+    "codificar_mensaje",
 ]
 
 # Bytes de relleno que se alternan para llegar a la capacidad exacta, despues del
@@ -192,3 +200,38 @@ def agrupar_en_bytes(bits: list[int]) -> list[int]:
         sum(bit << (7 - j) for j, bit in enumerate(bits[i : i + 8]))
         for i in range(0, len(bits), 8)
     ]
+
+def _validar_entrada(entrada: EntradaUsuario) -> None:
+    """Checa los parametros de EntradaUsuario que le tocan a P1.
+
+    `version_minima` lo valida `elegir_version`, aca solo la mascara, que no se
+    usa pero conviene rechazar de una vez (la consume despues P4).
+    """
+    if entrada.mascara is not None:
+        if not isinstance(entrada.mascara, int) or not (0 <= entrada.mascara <= 7):
+            raise ParametroInvalido(
+                f"mascara debe ser un entero de 0 a 7 o None, "
+                f"se recibio {entrada.mascara!r}"
+            )
+
+def codificar_mensaje(entrada: EntradaUsuario) -> MensajeCodificado:
+    """Etapas 1-3 de P1 en una. Analiza el texto, elige version y arma el
+    bitstream. Es la entrada del flujo; la llama el orquestador `generar_qr`.
+
+    Encadena `analizar_texto` (entrada.py) -> `elegir_version` -> `armar_bits` -> `agrupar_en_bytes` 
+    y devuelve el `MensajeCodificado` del contrato, listo
+    para que P2 le calcule el respaldo.
+    """
+    _validar_entrada(entrada)
+    analisis = analizar_texto(entrada.texto, entrada.modo)
+    version = elegir_version(analisis, entrada.nivel_correccion, entrada.version_minima)
+    bits = armar_bits(analisis, version, entrada.nivel_correccion)
+
+    return MensajeCodificado(
+        modo=analisis.modo,
+        version=version,
+        nivel_correccion=entrada.nivel_correccion,
+        cantidad_caracteres=analisis.cantidad_caracteres,
+        bits=bits,
+        bytes_mensaje=agrupar_en_bytes(bits),
+    )
