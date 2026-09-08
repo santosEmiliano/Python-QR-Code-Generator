@@ -19,7 +19,14 @@ from .tablas import (
 __all__ = [
     "codificar_segmento",
     "elegir_version",
+    "armar_bits",
+    "agrupar_en_bytes",
 ]
+
+# Bytes de relleno que se alternan para llegar a la capacidad exacta, despues del
+# terminador y del ajuste a byte. Son un patron fijo del estandar, no una tabla.
+# ISO/IEC 18004, 8.4.9:  11101100  y  00010001.
+_RELLENO_ALTERNADO = (0xEC, 0x11)
 
 
 def _int_a_bits(valor: int, ancho: int) -> list[int]:
@@ -124,3 +131,64 @@ def elegir_version(
         f"{analisis.modo.value}) no entra en ninguna version con nivel "
         f"{nivel_correccion.value}"
     )
+
+def armar_bits(
+    analisis: AnalisisTexto,
+    version: int,
+    nivel_correccion: NivelCorreccion,
+) -> list[int]:
+    """Arma el bitstream completo de datos para esa version y nivel.
+
+    Orden: indicador de modo + indicador de cantidad de caracteres + datos +
+    terminador (hasta 4 ceros) + ajuste a byte (ceros) + bytes de relleno
+    0xEC/0x11 alternados hasta llenar la capacidad exacta.
+
+    El resultado mide siempre capacidad_bytes_datos(version, nivel) * 8  bits,
+    asi que agrupa justo en bytes.
+
+    Si el texto no entra en esa version -> TextoNoEntra. Normalmente la version
+    ya viene de `elegir_version` y este error no se toma en cuenta.
+    """
+    ancho_cuenta = bits_cuenta_caracteres(version, analisis.modo)
+    if analisis.cantidad_caracteres >= (1 << ancho_cuenta):
+        raise TextoNoEntra(
+            f"la cantidad de caracteres ({analisis.cantidad_caracteres}) no entra "
+            f"en el indicador de cantidad de la v{version} ({ancho_cuenta} bits)"
+        )
+
+    capacidad_bits = capacidad_bytes_datos(version, nivel_correccion) * 8
+
+    bits = indicador_modo(analisis.modo)
+    bits += _int_a_bits(analisis.cantidad_caracteres, ancho_cuenta)
+    bits += codificar_segmento(analisis)
+
+    if len(bits) > capacidad_bits:
+        raise TextoNoEntra(
+            f"el mensaje ocupa {len(bits)} bits y la v{version} con nivel "
+            f"{nivel_correccion.value} solo admite {capacidad_bits}"
+        )
+
+    # Terminador: hasta 4 ceros, menos si ya casi no queda lugar.
+    bits += [0] * min(4, capacidad_bits - len(bits))
+    # Ajuste a byte: ceros hasta completar el ultimo byte.
+    bits += [0] * (-len(bits) % 8)
+    # Relleno: 0xEC / 0x11 alternados hasta la capacidad exacta.
+    for i in range((capacidad_bits - len(bits)) // 8):
+        bits += _int_a_bits(_RELLENO_ALTERNADO[i % 2], 8)
+
+    return bits
+
+
+def agrupar_en_bytes(bits: list[int]) -> list[int]:
+    """Agrupa una lista de bits 0/1 de a 8, MSB-first, es decir, una lista de enteros 0..255.
+
+    `bits` tiene que medir un multiplo de 8; si no, ParametroInvalido.
+    """
+    if len(bits) % 8 != 0:
+        raise ParametroInvalido(
+            f"la cantidad de bits ({len(bits)}) no es multiplo de 8"
+        )
+    return [
+        sum(bit << (7 - j) for j, bit in enumerate(bits[i : i + 8]))
+        for i in range(0, len(bits), 8)
+    ]
