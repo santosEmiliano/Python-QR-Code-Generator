@@ -7,12 +7,18 @@ para que P2 le calcule el respaldo.
 
 from __future__ import annotations
 
-from .contrato import Modo
+from .contrato import Modo, NivelCorreccion, ParametroInvalido, TextoNoEntra
 from .entrada import AnalisisTexto
-from .tablas import CARACTERES_ALFANUMERICOS
+from .tablas import (
+    CARACTERES_ALFANUMERICOS,
+    bits_cuenta_caracteres,
+    capacidad_bytes_datos,
+    indicador_modo,
+)
 
 __all__ = [
     "codificar_segmento",
+    "elegir_version",
 ]
 
 
@@ -70,3 +76,51 @@ def codificar_segmento(analisis: AnalisisTexto) -> list[int]:
     if analisis.modo == Modo.ALFANUMERICO:
         return _codificar_alfanumerico(analisis.texto)
     return _codificar_byte(analisis.texto)
+
+
+def _bits_necesarios(analisis: AnalisisTexto, version: int, bits_datos: int) -> int:
+    """Cuantos bits ocupa el mensaje (sin terminador ni relleno) en esa version.
+
+    Es  indicador de modo (4) + indicador de cantidad de caracteres + datos.
+    El indicador de cantidad cambia de ancho segun el tramo de version, por eso
+    depende de `version`.
+    """
+    return (
+        len(indicador_modo(analisis.modo))
+        + bits_cuenta_caracteres(version, analisis.modo)
+        + bits_datos
+    )
+
+
+def elegir_version(
+    analisis: AnalisisTexto,
+    nivel_correccion: NivelCorreccion,
+    version_minima: int | None = None,
+) -> int:
+    """Devuelve la version (tamano) mas chica donde entra el mensaje.
+
+    Prueba desde la v1 hacia arriba y se queda con la primera donde  modo + cantidad + datos  
+    cabe en la capacidad de datos de esa version y nivel de correccion. El terminador y el relleno se
+    agregan despues y siempre caben, porque solo ocupan el hueco que sobra.
+
+    - `version_minima` fuera de 1..40 -> ParametroInvalido.
+    - El texto no entra en ninguna version soportada -> TextoNoEntra.
+    """
+    if version_minima is not None:
+        if not isinstance(version_minima, int) or not (1 <= version_minima <= 40):
+            raise ParametroInvalido(
+                f"version_minima debe ser un entero de 1 a 40 o None, "
+                f"se recibio {version_minima!r}"
+            )
+
+    bits_datos = len(codificar_segmento(analisis))
+    for version in range(version_minima or 1, 41):
+        capacidad_bits = capacidad_bytes_datos(version, nivel_correccion) * 8
+        if _bits_necesarios(analisis, version, bits_datos) <= capacidad_bits:
+            return version
+
+    raise TextoNoEntra(
+        f"el texto ({analisis.cantidad_caracteres} caracteres en modo "
+        f"{analisis.modo.value}) no entra en ninguna version con nivel "
+        f"{nivel_correccion.value}"
+    )
