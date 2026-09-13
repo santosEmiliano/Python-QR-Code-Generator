@@ -1,5 +1,34 @@
 from qr.contrato import EntradaUsuario, ModoPedido, ErrorQR, NivelCorreccion
 
+def menu():
+    while True:
+        try:
+            print('''
+                Generador de códigos QR, Seleccione la acción que desea tomar:
+                1) Generar QR simple
+                2) Generar QR avanzado
+                3) Salir
+                \n
+                ''')
+            opt = int(input("> Respuesta: "))
+
+            match opt:
+                case 1:
+                    QRAuto()
+                case 2:
+                    QRAdvanced()
+                case 3:
+                    break
+        except ValueError:
+            print("Valor no valido")
+
+
+def QRAuto():
+
+
+def QRAdvanced():
+
+
 # Ingresar contenido manualmente
 def ingresar_texto():
     texto = input("Ingrese el contenido que deseé convertir a un QR"
