@@ -1,7 +1,6 @@
 from qr.contrato import EntradaUsuario, Modo, ErrorQR, NivelCorreccion
 from qr.tablas import CAPACIDAD_ALFA, CAPACIDAD_BYTE, CAPACIDAD_NUM
 
-
 def menu():
     while True:
         try:
@@ -105,7 +104,7 @@ def ingresar_texto(modo: str):
                     else:
                         print(f"Texto no cuadra con modo [{modo}]")
                 case Modo.ALFANUMERICO.value:
-                    if texto.isnumeric():
+                    if all(c.isalnum() or c.isspace() for c in texto):
                         break
                     else:
                         print(f"Texto no cuadra con modo [{modo}]")
@@ -222,7 +221,7 @@ def ingresar_version_minima(texto: str, modo: str, nivel_correccion: NivelCorrec
 
     return min_ver
 
-# Creo sería bueno mover esta función a otra parte pero no se a cual
+# Creo sería bueno mover esta función a otra parte pero no sé a cuál
 def calcular_version_minima(texto: str, modo: str, nivel_correccion: NivelCorreccion):
     largo: int = len(texto)
     min_ver: int = 0
