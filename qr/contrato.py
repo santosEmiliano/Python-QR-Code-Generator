@@ -81,7 +81,7 @@ ModoPedido = Literal["auto", "numerico", "alfanumerico", "byte"]
 
 # Entrada del flujo de trabajo
 
-@dataclass(frozen=True)
+# @dataclass(frozen=True)
 class EntradaUsuario:
     """Lo que pide el usuario. Es la entrada de todo el flujo de trabajo."""
 
@@ -97,6 +97,26 @@ class EntradaUsuario:
     version_minima: int | None = None
     # Forzar uno de los 8 patrones de mascara (0..7). None: P4 elige el mejor.
     mascara: int | None = None
+
+    def __init__(self, *args):
+        if len(args) == 1:
+            self.set_basic(args[0])
+        elif len(args) == 5:
+            self.set_advanced(args[0], args[1], args[2], args[3], args[4])
+
+    def set_basic(self, texto):
+        self.texto = texto
+
+    def set_advanced(self, texto, nivel, modo, version, mascara):
+        self.texto = texto
+        self.nivel_correccion = nivel
+        self.modo = modo
+        self.version_minima = version
+        self.mascara = mascara
+
+    def __format__(self, format_spec: str):
+        return f"Texto: {self.texto} | Modo: {self.modo} | Nivel de Corrección {self.nivel_correccion} | Versión: {self.version_minima} | Máscara: {self.mascara}"
+
 
 # Etapas 1-3 - P1 - codificar_mensaje()
 

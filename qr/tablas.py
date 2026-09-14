@@ -17,6 +17,9 @@ from .contrato import Modo, NivelCorreccion, ParametroInvalido
 
 __all__ = [
     "CARACTERES_ALFANUMERICOS",
+    "CAPACIDAD_NUM",
+    "CAPACIDAD_ALFA",
+    "CAPACIDAD_BYTE",
     "bits_cuenta_caracteres",
     "capacidad_bytes_datos",
     "total_bytes",
@@ -128,9 +131,136 @@ CAPACIDAD_NUM: dict[int, dict[NivelCorreccion, int]] = {
         NivelCorreccion.H: 0,
     }
 }
+
 # ----- TABLA 6 -----
+# Tabla de capacidad para datos NUMÉRICOS (0-9)
+CAPACIDAD_ALFA: dict[int, dict[NivelCorreccion, int]] = {
+    1: {
+        NivelCorreccion.L: 41,
+        NivelCorreccion.M: 34,
+        NivelCorreccion.Q: 27,
+        NivelCorreccion.H: 17,
+    },
+    2: {
+        NivelCorreccion.L: 77,
+        NivelCorreccion.M: 63,
+        NivelCorreccion.Q: 48,
+        NivelCorreccion.H: 34,
+    },
+    3: {
+        NivelCorreccion.L: 0,
+        NivelCorreccion.M: 0,
+        NivelCorreccion.Q: 0,
+        NivelCorreccion.H: 0,
+    },
+    4: {
+        NivelCorreccion.L: 0,
+        NivelCorreccion.M: 0,
+        NivelCorreccion.Q: 0,
+        NivelCorreccion.H: 0,
+    },
+    5: {
+        NivelCorreccion.L: 0,
+        NivelCorreccion.M: 0,
+        NivelCorreccion.Q: 0,
+        NivelCorreccion.H: 0,
+    },
+    6: {
+        NivelCorreccion.L: 0,
+        NivelCorreccion.M: 0,
+        NivelCorreccion.Q: 0,
+        NivelCorreccion.H: 0,
+    },
+    7: {
+        NivelCorreccion.L: 0,
+        NivelCorreccion.M: 0,
+        NivelCorreccion.Q: 0,
+        NivelCorreccion.H: 0,
+    },
+    8: {
+        NivelCorreccion.L: 0,
+        NivelCorreccion.M: 0,
+        NivelCorreccion.Q: 0,
+        NivelCorreccion.H: 0,
+    },
+    9: {
+        NivelCorreccion.L: 0,
+        NivelCorreccion.M: 0,
+        NivelCorreccion.Q: 0,
+        NivelCorreccion.H: 0,
+    },
+    10: {
+        NivelCorreccion.L: 0,
+        NivelCorreccion.M: 0,
+        NivelCorreccion.Q: 0,
+        NivelCorreccion.H: 0,
+    }
+}
 
 # ----- TABLA 7 -----
+# Tabla de capacidad para datos NUMÉRICOS (0-9)
+CAPACIDAD_BYTE: dict[int, dict[NivelCorreccion, int]] = {
+    1: {
+        NivelCorreccion.L: 41,
+        NivelCorreccion.M: 34,
+        NivelCorreccion.Q: 27,
+        NivelCorreccion.H: 17,
+    },
+    2: {
+        NivelCorreccion.L: 77,
+        NivelCorreccion.M: 63,
+        NivelCorreccion.Q: 48,
+        NivelCorreccion.H: 34,
+    },
+    3: {
+        NivelCorreccion.L: 0,
+        NivelCorreccion.M: 0,
+        NivelCorreccion.Q: 0,
+        NivelCorreccion.H: 0,
+    },
+    4: {
+        NivelCorreccion.L: 0,
+        NivelCorreccion.M: 0,
+        NivelCorreccion.Q: 0,
+        NivelCorreccion.H: 0,
+    },
+    5: {
+        NivelCorreccion.L: 0,
+        NivelCorreccion.M: 0,
+        NivelCorreccion.Q: 0,
+        NivelCorreccion.H: 0,
+    },
+    6: {
+        NivelCorreccion.L: 0,
+        NivelCorreccion.M: 0,
+        NivelCorreccion.Q: 0,
+        NivelCorreccion.H: 0,
+    },
+    7: {
+        NivelCorreccion.L: 0,
+        NivelCorreccion.M: 0,
+        NivelCorreccion.Q: 0,
+        NivelCorreccion.H: 0,
+    },
+    8: {
+        NivelCorreccion.L: 0,
+        NivelCorreccion.M: 0,
+        NivelCorreccion.Q: 0,
+        NivelCorreccion.H: 0,
+    },
+    9: {
+        NivelCorreccion.L: 0,
+        NivelCorreccion.M: 0,
+        NivelCorreccion.Q: 0,
+        NivelCorreccion.H: 0,
+    },
+    10: {
+        NivelCorreccion.L: 0,
+        NivelCorreccion.M: 0,
+        NivelCorreccion.Q: 0,
+        NivelCorreccion.H: 0,
+    }
+}
 
 # ----- TABLA 8 -----
 # Estructura de bloques de corrección. Tabla 9.
