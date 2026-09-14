@@ -274,7 +274,34 @@ def ingresar_mascara():
 
     return mascara
 
+def imprimir_qr(matriz: list[list[bool]]):
+    filas = len(matriz)
+    colum = len(matriz[0])
+
+    resultado: str = ""
+
+    for i in range (filas):
+        for j in range (colum):
+            if matriz[i][j]:
+                resultado += " "
+            else:
+                resultado += "█"
+        resultado += "\n"
+
+    return resultado
+
+
 def main():
+    prueba = [
+        [False,False,False,False,False],
+        [False,True,True,True,False],
+        [False, True, False, False, False],
+        [False, True, True, True, False],
+        [False, False, False, False, False]
+    ]
+
+    print(imprimir_qr(prueba))
+
     menu()
 
     print("\nFinalización del Programa: Tenga buen día")
