@@ -1,5 +1,6 @@
 from qr.contrato import EntradaUsuario, Modo, ErrorQR, NivelCorreccion
 from qr.tablas import CAPACIDAD_ALFA, CAPACIDAD_BYTE, CAPACIDAD_NUM
+from qr.ui.qr_imagen import crear_imagen_qr
 
 def menu():
     while True:
@@ -45,7 +46,7 @@ def qr_selector(tipo: int):
 
                     if datos_qr:
                         print(f"\nDatos de QR: {datos_qr}")
-                    break
+                        break
                 elif opt == 2:
                     break
                 else:
@@ -300,6 +301,8 @@ def main():
     ]
 
     print(imprimir_qr(prueba))
+
+    crear_imagen_qr("QR", prueba)
 
     menu()
 
