@@ -116,7 +116,7 @@ def ingresar_texto(modo: str):
 
     return texto
 
-# Ingresar nivel de correción manualmente
+# Ingresar nivel de corrección manualmente
 def ingresar_nivel_correccion():
     nivel: NivelCorreccion = NivelCorreccion.M
     array_nivel = ["L (Bajo - 7%)", "M (Medio - 15%)", "Q (Cuartil - 25%)", "H (Alto - 30%)"]

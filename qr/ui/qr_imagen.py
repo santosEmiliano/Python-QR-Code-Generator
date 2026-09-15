@@ -1,7 +1,9 @@
 import zlib
 import struct
 
-def makeGrayPNG(data, height = None, width = None):
+bit_size = 16
+
+def make_png(data, height = None, width = None):
     def I1(value):
         return struct.pack("!B", value & (2**8-1))
     def I4(value):
@@ -60,14 +62,18 @@ def crear_imagen_qr(nombre: str, matrix: list[list[bool]]):
     filas = len(matrix)
     colum = len(matrix[0])
 
-    for i in range (filas):
+    for i in range(filas):
         matrix_fila = []
-        for j in range (colum):
+        for j in range(colum):
             if matrix[i][j]:
-                matrix_fila.append(0)
+                for k in range(bit_size):
+                    matrix_fila.append(0)
             else:
-                matrix_fila.append(255)
-        matrix_new.append(matrix_fila)
+                for k in range(bit_size):
+                    matrix_fila.append(255)
+
+        for k in range(bit_size):
+            matrix_new.append(matrix_fila)
 
     with open(f"{nombre}.png", "wb") as f:
-        f.write(makeGrayPNG(matrix_new))
+        f.write(make_png(matrix_new))
