@@ -1,6 +1,7 @@
 from qr.contrato import EntradaUsuario, Modo, ErrorQR, NivelCorreccion, ResultadoQR
 from qr.qr import generar_qr
-from qr.tablas import CAPACIDAD_ALFA, CAPACIDAD_BYTE, CAPACIDAD_NUM
+from qr.entrada import analizar_texto
+from qr.version import elegir_version
 from qr.ui.qr_imagen import crear_imagen_qr
 
 def menu():
@@ -224,33 +225,9 @@ def ingresar_version_minima(texto: str, modo: str, nivel_correccion: NivelCorrec
 
     return min_ver
 
-# Creo sería bueno mover esta función a otra parte pero no sé a cuál
+# Versión más chica donde entra el texto: la misma cuenta que hace el generador
 def calcular_version_minima(texto: str, modo: str, nivel_correccion: NivelCorreccion):
-    largo: int = len(texto)
-    min_ver: int = 0
-
-    match modo:
-        case Modo.NUMERICO.value:
-            for clave, valor in CAPACIDAD_NUM.items():
-                max_len = valor.get(nivel_correccion)
-
-                if max_len > largo:
-                    min_ver = clave
-
-        case Modo.ALFANUMERICO.value:
-            for clave, valor in CAPACIDAD_ALFA.items():
-                max_len = valor.get(nivel_correccion)
-
-                if max_len > largo:
-                    min_ver = clave
-
-        case Modo.BYTE.value:
-            for clave, valor in CAPACIDAD_BYTE.items():
-                max_len = valor.get(nivel_correccion)
-
-                if max_len > largo:
-                    min_ver = clave
-    return min_ver
+    return elegir_version(analizar_texto(texto, modo), nivel_correccion)
 
 def ingresar_mascara():
     mascara = None
