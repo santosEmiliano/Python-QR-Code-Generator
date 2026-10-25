@@ -1,4 +1,5 @@
 from qr.contrato import EntradaUsuario, Modo, ErrorQR, NivelCorreccion, ResultadoQR
+from qr.qr import generar_qr
 from qr.tablas import CAPACIDAD_ALFA, CAPACIDAD_BYTE, CAPACIDAD_NUM
 from qr.ui.qr_imagen import crear_imagen_qr
 
@@ -46,6 +47,8 @@ def qr_selector(tipo: int):
 
                     if datos_qr:
                         print(f"\nDatos de QR: {datos_qr}")
+                        resultado = generar_qr(datos_qr)
+                        mostrar_resultado(resultado)
                         break
                 elif opt == 2:
                     break
@@ -55,10 +58,6 @@ def qr_selector(tipo: int):
             except ValueError:
                 print("ERROR: Valor no es una opción válida\n")
 
-        # Aquí debe mandar a llamar la función para generar el QR
-        # resultado = generar_qr(entrada)
-        # Manda a llamar para imprimir los resultados del QR
-        # mostrar_resultado(resultado)
     except ErrorQR as mensaje:
         print(f"Error al crear el QR: {mensaje}\n")
 
