@@ -24,7 +24,7 @@ from .contrato import ParametroInvalido, ResultadoQR
 from .reed_solomon import intercalar
 from .tablas import bloques_correccion, total_bytes
 
-__all__ = ["InformeDanio", "danar_matriz", "celdas_de_bytes"]
+__all__ = ["InformeDanio", "danar_matriz", "modulos_tolerados", "celdas_de_bytes"]
 
 MODOS_DANIO = ("azar", "bloque")
 
@@ -82,49 +82,103 @@ def _bloque_de_cada_byte(resultado: ResultadoQR) -> tuple[list[int], list[int]]:
     return intercalar(marcas), ec_por_bloque
 
 
-def _elegir_azar(celdas: list[tuple[int, int]], k: int, azar: random.Random):
-    return azar.sample(celdas, k)
+def _orden_azar(celdas: list[tuple[int, int]], azar: random.Random):
+    orden = list(celdas)
+    azar.shuffle(orden)
+    return orden
 
 
-def _elegir_bloque(celdas: list[tuple[int, int]], k: int, azar: random.Random):
-    """Las k celdas mas cercanas a un centro elegido al azar (distancia de
-    Chebyshev, desempata por Manhattan), es una mancha contigua y cuadrada."""
+def _orden_bloque(celdas: list[tuple[int, int]], azar: random.Random):
+    """Todas las celdas, de la más cercana a la más lejana de un centro elegido al
+    azar (distancia de Chebyshev, desempata por Manhattan). Tomar las k primeras
+    da una mancha contigua y cuadrada."""
     cf, cc = azar.choice(celdas)
     return sorted(
         celdas,
         key=lambda p: (max(abs(p[0] - cf), abs(p[1] - cc)), abs(p[0] - cf) + abs(p[1] - cc)),
-    )[:k]
+    )
+
+
+_ORDENES = {"azar": _orden_azar, "bloque": _orden_bloque}
+
+
+def _validar_modo(modo: str) -> None:
+    if modo not in MODOS_DANIO:
+        raise ParametroInvalido(f"modo de daño desconocido: {modo!r} (usa {MODOS_DANIO})")
+
+
+def _orden_de_daño(celdas: list[tuple[int, int]], modo: str, semilla: int | None):
+    """El orden en que se van dañando las celdas. Con la misma semilla es siempre el
+    mismo, y dañar k + 1 celdas incluye las k anteriores."""
+    return _ORDENES[modo](celdas, random.Random(semilla))
+
+
+def modulos_tolerados(resultado: ResultadoQR, modo: str, semilla: int) -> int:
+    """Cuántos módulos se pueden dañar con este modo y esta semilla sin que algún
+    bloque pase su límite: con ese número aún es recuperable y con uno más ya no.
+    Hay que pasar la misma semilla que luego se use en danar_matriz."""
+    _validar_modo(modo)
+    if isinstance(semilla, bool) or not isinstance(semilla, int):
+        raise ParametroInvalido(f"la semilla debe ser un entero, se recibio {semilla!r}")
+
+    celdas = celdas_de_bytes(resultado.matriz_ordenada.reservado, resultado.mensaje.version)
+    indice_de_celda = {celda: i for i, celda in enumerate(celdas)}
+    bloque_de, ec_por_bloque = _bloque_de_cada_byte(resultado)
+
+    danados = [0] * len(ec_por_bloque)
+    tocados: set[int] = set()
+    for i, celda in enumerate(_orden_de_daño(celdas, modo, semilla)):
+        byte = indice_de_celda[celda] // 8
+        if byte in tocados:
+            continue
+        tocados.add(byte)
+        bloque = bloque_de[byte]
+        danados[bloque] += 1
+        if danados[bloque] > ec_por_bloque[bloque] // 2:
+            return i
+    return len(celdas)
 
 
 def danar_matriz(
     resultado: ResultadoQR,
-    porcentaje: float,
+    porcentaje: float | None = None,
     modo: str = "azar",
     semilla: int | None = None,
+    modulos: int | None = None,
 ) -> InformeDanio:
-    """Invierte "porcentaje" % de los modulos de datos y correccion de
-    "resultado.final.matriz", devuelve una matriz nueva.
+    """Invierte módulos de datos y corrección de "resultado.final.matriz" y devuelve
+    una matriz nueva. La cantidad se da con uno solo de estos dos:
 
-    - `porcentaje`: mayor que 0 y hasta 100. Siempre se invierte al menos un modulo.
-    - `modo`: "azar" o "bloque".
-    - `semilla`: para repetir el mismo daño, None usa uno distinto cada vez.
+    - `porcentaje`: mayor que 0 y hasta 100, sobre los módulos de datos y corrección.
+      Siempre se invierte al menos un módulo.
+    - `modulos`: la cantidad exacta, de 1 hasta el total de módulos de datos.
+
+    `modo` es "azar" o "bloque". `semilla` repite el mismo daño, None usa uno
+    distinto cada vez.
     """
-    if modo not in MODOS_DANIO:
-        raise ParametroInvalido(f"modo de daño desconocido: {modo!r} (usa {MODOS_DANIO})")
-    if isinstance(porcentaje, bool) or not isinstance(porcentaje, (int, float)) \
-            or not (0 < porcentaje <= 100):
-        raise ParametroInvalido(
-            f"el porcentaje debe ser mayor que 0 y hasta 100, se recibio {porcentaje!r}"
-        )
+    _validar_modo(modo)
+    if (porcentaje is None) == (modulos is None):
+        raise ParametroInvalido("hay que dar el porcentaje o los módulos, no ambos ni ninguno")
 
     version = resultado.mensaje.version
     celdas = celdas_de_bytes(resultado.matriz_ordenada.reservado, version)
     total = len(celdas)
-    k = min(total, max(1, round(total * porcentaje / 100)))
 
-    azar = random.Random(semilla)
-    elegir = _elegir_azar if modo == "azar" else _elegir_bloque
-    elegidas = elegir(celdas, k, azar)
+    if porcentaje is not None:
+        if isinstance(porcentaje, bool) or not isinstance(porcentaje, (int, float)) \
+                or not (0 < porcentaje <= 100):
+            raise ParametroInvalido(
+                f"el porcentaje debe ser mayor que 0 y hasta 100, se recibio {porcentaje!r}"
+            )
+        k = min(total, max(1, round(total * porcentaje / 100)))
+    else:
+        if isinstance(modulos, bool) or not isinstance(modulos, int) or not (1 <= modulos <= total):
+            raise ParametroInvalido(
+                f"los módulos deben ser un entero de 1 a {total}, se recibio {modulos!r}"
+            )
+        k = modulos
+
+    elegidas = _orden_de_daño(celdas, modo, semilla)[:k]
 
     matriz = [fila[:] for fila in resultado.final.matriz]
     for fila, columna in elegidas:

@@ -10,7 +10,7 @@ from __future__ import annotations
 import unittest
 
 from qr.contrato import EntradaUsuario, NivelCorreccion, ParametroInvalido
-from qr.danio import InformeDanio, celdas_de_bytes, danar_matriz
+from qr.danio import InformeDanio, celdas_de_bytes, danar_matriz, modulos_tolerados
 from qr.qr import generar_qr
 
 L, M, Q, H = (
@@ -177,6 +177,90 @@ class TestInforme(unittest.TestCase):
         azar = danar_matriz(r, 5, "azar", semilla=4)
         self.assertLess(extension(mancha), 20)
         self.assertGreater(extension(azar), 30)
+
+
+class TestModulosTolerados(unittest.TestCase):
+    CASOS = [("HOLA", M), ("Hola Mundo", M), ("HELLO WORLD", L), ("a" * 60, Q), ("a" * 120, M), ("b" * 100, H)]
+
+    def test_con_n_modulos_se_recupera_y_con_uno_mas_no(self):
+        for texto, nivel in self.CASOS:
+            r = qr(texto, nivel)
+            for modo in ("azar", "bloque"):
+                for semilla in range(6):
+                    n = modulos_tolerados(r, modo, semilla)
+                    etiqueta = f"v{r.mensaje.version}-{nivel.value} {modo} sem{semilla} n={n}"
+                    self.assertGreaterEqual(n, 1, etiqueta)
+                    self.assertTrue(danar_matriz(r, modo=modo, semilla=semilla, modulos=n).recuperable, etiqueta)
+                    self.assertFalse(danar_matriz(r, modo=modo, semilla=semilla, modulos=n + 1).recuperable, etiqueta)
+
+    def test_todo_lo_mayor_al_limite_tampoco_se_recupera(self):
+        r = qr("Hola Mundo", M)
+        n = modulos_tolerados(r, "bloque", 3)
+        total = danar_matriz(r, 100, "bloque", 3).total_modulos
+        for k in (n + 1, 2 * n, total):
+            self.assertFalse(danar_matriz(r, modo="bloque", semilla=3, modulos=k).recuperable)
+
+    def test_el_limite_es_siempre_menor_al_total_de_modulos(self):
+        r = qr("Hola Mundo", M)
+        total = danar_matriz(r, 100).total_modulos
+        for modo in ("azar", "bloque"):
+            self.assertLess(modulos_tolerados(r, modo, 1), total)
+
+    def test_misma_semilla_mismo_limite(self):
+        r = qr("Hola Mundo", M)
+        for modo in ("azar", "bloque"):
+            self.assertEqual(modulos_tolerados(r, modo, 9), modulos_tolerados(r, modo, 9))
+
+    def test_la_mancha_aguanta_mas_modulos_que_el_azar_en_un_qr_de_un_solo_bloque(self):
+        # Hola Mundo en v1-M: un solo bloque, 5 bytes de tolerancia.
+        r = qr("Hola Mundo", M)
+        azar = sum(modulos_tolerados(r, "azar", s) for s in range(10)) / 10
+        mancha = sum(modulos_tolerados(r, "bloque", s) for s in range(10)) / 10
+        self.assertGreater(mancha, azar)
+
+    def test_parametros_invalidos(self):
+        r = qr("HOLA")
+        with self.assertRaises(ParametroInvalido):
+            modulos_tolerados(r, "diagonal", 1)
+        for malo in (None, "1", 1.5, True):
+            with self.assertRaises(ParametroInvalido, msg=repr(malo)):
+                modulos_tolerados(r, "azar", malo)  # type: ignore[arg-type]
+
+
+class TestDanarPorModulos(unittest.TestCase):
+    def setUp(self):
+        self.r = qr("HELLO WORLD", M)
+        self.total = danar_matriz(self.r, 100).total_modulos
+
+    def test_invierte_exactamente_esa_cantidad(self):
+        for modo in ("azar", "bloque"):
+            for k in (1, 7, 50, self.total):
+                i = danar_matriz(self.r, modo=modo, semilla=2, modulos=k)
+                self.assertEqual(i.modulos_invertidos, k)
+                self.assertEqual(len(celdas_distintas(i.matriz, self.r.final.matriz)), k)
+
+    def test_dañar_k_mas_uno_incluye_los_k_anteriores(self):
+        for modo in ("azar", "bloque"):
+            menos = celdas_distintas(danar_matriz(self.r, modo=modo, semilla=5, modulos=12).matriz, self.r.final.matriz)
+            mas = celdas_distintas(danar_matriz(self.r, modo=modo, semilla=5, modulos=13).matriz, self.r.final.matriz)
+            self.assertLess(menos, mas)
+
+    def test_porcentaje_y_modulos_equivalentes_dan_el_mismo_daño(self):
+        k = round(self.total * 10 / 100)
+        a = danar_matriz(self.r, 10, "azar", semilla=4)
+        b = danar_matriz(self.r, modo="azar", semilla=4, modulos=k)
+        self.assertEqual(a.matriz, b.matriz)
+
+    def test_hay_que_dar_uno_solo_de_los_dos(self):
+        with self.assertRaises(ParametroInvalido):
+            danar_matriz(self.r)
+        with self.assertRaises(ParametroInvalido):
+            danar_matriz(self.r, 5, modulos=10)
+
+    def test_modulos_fuera_de_rango_o_de_tipo_incorrecto(self):
+        for malo in (0, -3, self.total + 1, 2.5, "4", True):
+            with self.assertRaises(ParametroInvalido, msg=repr(malo)):
+                danar_matriz(self.r, modulos=malo)  # type: ignore[arg-type]
 
 
 class TestParametros(unittest.TestCase):
