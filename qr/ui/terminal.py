@@ -253,19 +253,25 @@ def ingresar_mascara():
 
     return mascara
 
+# Margen blanco que exige el estándar alrededor del QR, en módulos
+MARGEN_QR = 4
+
+# Devuelve el QR como texto para terminal de fondo oscuro: el claro se dibuja con
+# bloques y el oscuro queda vacío. Cada módulo ocupa dos caracteres para que no se
+# vea estirado.
 def imprimir_qr(matriz: list[list[bool]]):
-    filas = len(matriz)
     colum = len(matriz[0])
+    linea_margen = "██" * (colum + 2 * MARGEN_QR) + "\n"
 
-    resultado: str = ""
+    resultado: str = linea_margen * MARGEN_QR
 
-    for i in range (filas):
-        for j in range (colum):
-            if matriz[i][j]:
-                resultado += " "
-            else:
-                resultado += "█"
-        resultado += "\n"
+    for fila in matriz:
+        resultado += "██" * MARGEN_QR
+        for modulo in fila:
+            resultado += "  " if modulo else "██"
+        resultado += "██" * MARGEN_QR + "\n"
+
+    resultado += linea_margen * MARGEN_QR
 
     return resultado
 
@@ -274,29 +280,27 @@ def mostrar_resultado(resultado: ResultadoQR):
     datos_mascara = resultado.final.mascara
 
     # Imprimir Matriz
-    imprimir_qr(datos_matriz)
+    print(imprimir_qr(datos_matriz))
 
-    # Falta imprimir los datos de la matriz
     print("############# DATOS DE LA MATRIZ #############")
+    print(f"Modo: {resultado.mensaje.modo.value}")
+    print(f"Nivel de corrección: {resultado.mensaje.nivel_correccion.value}")
+    print(f"Versión: {resultado.mensaje.version}")
     print(f"Máscara usada: {datos_mascara}")
 
     # Preguntar si quiere generar imagen
     while True:
-        try:
-            opc = input("Desea generar una imagen de su QR?")
+        opc = input("¿Desea generar una imagen de su QR? (S/N): ").strip().upper()
 
-            opc = opc.upper()
-
-            match opc:
-                case "S":
-                    crear_imagen_qr("QR", datos_matriz)
-                case "N":
-                    break
-                case _:
-                    raise ValueError
-
-        except ValueError:
-            print("ERROR: Valor no válido")
+        match opc:
+            case "S":
+                crear_imagen_qr("QR", datos_matriz)
+                print("Imagen guardada como QR.png")
+                break
+            case "N":
+                break
+            case _:
+                print("ERROR: Valor no válido")
     return
 
 def main():
