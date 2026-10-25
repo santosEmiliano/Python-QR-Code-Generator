@@ -69,7 +69,7 @@ def qr_auto():
     if texto == 'n' or texto == 'N':
         return False
 
-    entrada_user: EntradaUsuario = EntradaUsuario(texto)
+    entrada_user: EntradaUsuario = EntradaUsuario(texto=texto)
 
     return entrada_user
 
@@ -85,7 +85,8 @@ def qr_advanced():
     mascara = ingresar_mascara()
 
 
-    entrada_user: EntradaUsuario = EntradaUsuario(texto,nivel,modo,version,mascara)
+    entrada_user: EntradaUsuario = EntradaUsuario(texto=texto, nivel_correccion=nivel, modo=modo,
+                                                 version_minima=version, mascara=mascara)
 
     return entrada_user
 
