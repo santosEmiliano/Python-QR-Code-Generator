@@ -2,6 +2,7 @@ import zlib
 import struct
 
 bit_size = 16
+margen_modulos = 4
 
 def make_png(data, height = None, width = None):
     def I1(value):
@@ -58,6 +59,15 @@ def make_png(data, height = None, width = None):
     return png
 
 def crear_imagen_qr(nombre: str, matrix: list[list[bool]]):
+    # Margen blanco de 4 módulos que exige el estándar para que un lector lo detecte
+    colum_margen = len(matrix[0]) + 2 * margen_modulos
+    vacia = [False] * colum_margen
+    matrix = (
+        [vacia] * margen_modulos
+        + [[False] * margen_modulos + fila + [False] * margen_modulos for fila in matrix]
+        + [vacia] * margen_modulos
+    )
+
     matrix_new = []
     filas = len(matrix)
     colum = len(matrix[0])
