@@ -1,5 +1,7 @@
+import random
+
 from qr.contrato import EntradaUsuario, Modo, ErrorQR, NivelCorreccion, ResultadoQR
-from qr.danio import InformeDanio, MODOS_DANIO, danar_matriz
+from qr.danio import InformeDanio, MODOS_DANIO, danar_matriz, modulos_tolerados
 from qr.qr import generar_qr
 from qr.tablas import VERSION_MAX_CARGADA
 from qr.entrada import analizar_texto
@@ -329,12 +331,17 @@ def danar_qr(resultado: ResultadoQR):
     modo = ingresar_modo_danio()
     if modo is None:
         return
-    porcentaje = ingresar_porcentaje_danio()
-    if porcentaje is None:
+
+    # La misma semilla para calcular el límite y para dañar: así el límite es exacto
+    semilla = random.randrange(2 ** 32)
+    total = len(resultado.correccion.secuencia) * 8
+    limite = modulos_tolerados(resultado, modo, semilla)
+    cantidad = ingresar_intensidad_danio(modo, limite, total)
+    if cantidad is None:
         return
 
     try:
-        informe = danar_matriz(resultado, porcentaje, modo)
+        informe = danar_matriz(resultado, modo=modo, semilla=semilla, **cantidad)
     except ErrorQR as mensaje:
         print(f"Error al dañar el QR: {mensaje}\n")
         return
@@ -370,6 +377,44 @@ def ingresar_modo_danio():
         if resp in ("1", "2"):
             return MODOS_DANIO[int(resp) - 1]
         print("ERROR: Valor no es una opción válida\n")
+
+# Muestra cuánto aguanta este QR y deja elegir entre tres intensidades o una propia.
+# Devuelve los argumentos de danar_matriz para la cantidad (modulos o porcentaje).
+def ingresar_intensidad_danio(modo: str, limite: int, total: int):
+    leve = max(1, limite // 2)
+    excesivo = min(total, limite * 2)
+    tipo = "al azar" if modo == "azar" else "en mancha"
+
+    print(f"\nReferencia: con daño {tipo}, este QR aguanta hasta {limite} de {total} módulos "
+          f"({limite / total:.1%}). Con uno más ya no se puede recuperar.")
+
+    while True:
+        print("\n¿Cuánto daño desea aplicar?"
+              f"\n> 1 - Leve: {leve} módulos ({leve / total:.1%}), debería leerse con margen"
+              f"\n> 2 - Justo en el límite: {limite} módulos ({limite / total:.1%}), un lector real puede fallar aquí"
+              f"\n> 3 - Excesivo: {excesivo} módulos ({excesivo / total:.1%}), no debería poder leerse"
+              "\n> 4 - Personalizado (un porcentaje)"
+              "\n> Para cancelar la opción tecleé 'n'\n")
+
+        resp = input("> Respuesta: ").strip().lower()
+
+        if resp == 'n':
+            print("Acción cancelada: Sin daño")
+            return None
+        match resp:
+            case "1":
+                return {"modulos": leve}
+            case "2":
+                return {"modulos": limite}
+            case "3":
+                return {"modulos": excesivo}
+            case "4":
+                porcentaje = ingresar_porcentaje_danio()
+                if porcentaje is not None:
+                    return {"porcentaje": porcentaje}
+                return None
+            case _:
+                print("ERROR: Valor no es una opción válida\n")
 
 def ingresar_porcentaje_danio():
     while True:
