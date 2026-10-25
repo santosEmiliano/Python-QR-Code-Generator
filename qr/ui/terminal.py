@@ -269,7 +269,7 @@ def ingresar_mascara():
             if resp < 1 or resp > 8:
                 print("ERROR: Valor no es una opción válida\n")
             else:
-                mascara = resp
+                mascara = resp - 1  # el usuario ve 1-8, el contrato usa 0-7
                 break
         except ValueError:
             print("ERROR: Valor no es una opción válida\n")
