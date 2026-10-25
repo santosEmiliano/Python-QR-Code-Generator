@@ -1,4 +1,5 @@
 from qr.contrato import EntradaUsuario, Modo, ErrorQR, NivelCorreccion, ResultadoQR
+from qr.danio import InformeDanio, MODOS_DANIO, danar_matriz
 from qr.qr import generar_qr
 from qr.tablas import VERSION_MAX_CARGADA
 from qr.entrada import analizar_texto
@@ -307,7 +308,104 @@ def mostrar_resultado(resultado: ResultadoQR):
                 break
             case _:
                 print("ERROR: Valor no válido")
+
+    ofrecer_danio(resultado)
     return
+
+# Daño simulado: invierte módulos del QR para comprobar la corrección de errores
+def ofrecer_danio(resultado: ResultadoQR):
+    while True:
+        opc = input("\n¿Desea dañar el QR para probar la corrección de errores? (S/N): ").strip().upper()
+
+        match opc:
+            case "S":
+                danar_qr(resultado)
+            case "N":
+                break
+            case _:
+                print("ERROR: Valor no válido")
+
+def danar_qr(resultado: ResultadoQR):
+    modo = ingresar_modo_danio()
+    if modo is None:
+        return
+    porcentaje = ingresar_porcentaje_danio()
+    if porcentaje is None:
+        return
+
+    try:
+        informe = danar_matriz(resultado, porcentaje, modo)
+    except ErrorQR as mensaje:
+        print(f"Error al dañar el QR: {mensaje}\n")
+        return
+
+    print(imprimir_qr(informe.matriz))
+    mostrar_informe_danio(informe, resultado.mensaje.nivel_correccion)
+
+    while True:
+        opc = input("¿Desea guardar el QR dañado como imagen? (S/N): ").strip().upper()
+
+        match opc:
+            case "S":
+                crear_imagen_qr("QR_danado", informe.matriz)
+                print("Imagen guardada como QR_danado.png")
+                break
+            case "N":
+                break
+            case _:
+                print("ERROR: Valor no válido")
+
+def ingresar_modo_danio():
+    while True:
+        print("\n¿Cómo desea dañar el QR?"
+              "\n> 1 - Al azar (módulos sueltos repartidos por todo el QR)"
+              "\n> 2 - Mancha (módulos juntos, como un borrón)"
+              "\n> Para cancelar la opción tecleé 'n'\n")
+
+        resp = input("> Respuesta: ").strip().lower()
+
+        if resp == 'n':
+            print("Acción cancelada: Sin daño")
+            return None
+        if resp in ("1", "2"):
+            return MODOS_DANIO[int(resp) - 1]
+        print("ERROR: Valor no es una opción válida\n")
+
+def ingresar_porcentaje_danio():
+    while True:
+        resp = input("\n¿Qué porcentaje de los módulos de datos desea invertir? (mayor que 0 y hasta 100)"
+                     "\n> Para cancelar la opción tecleé 'n'"
+                     "\n> Respuesta: ").strip().lower().replace(",", ".")
+
+        if resp == 'n':
+            print("Acción cancelada: Sin daño")
+            return None
+        try:
+            porcentaje = float(resp)
+        except ValueError:
+            print("ERROR: Valor no es un número\n")
+            continue
+        if 0 < porcentaje <= 100:
+            return porcentaje
+        print("ERROR: El porcentaje debe ser mayor que 0 y hasta 100\n")
+
+def mostrar_informe_danio(informe: InformeDanio, nivel_correccion: NivelCorreccion):
+    fuera = [(d, t) for d, t in informe.por_bloque if d > t]
+    mas_danado, tolera = max(informe.por_bloque, key=lambda b: b[0] - b[1])
+
+    print("############# DAÑO SIMULADO #############")
+    print(f"Tipo de daño: {'al azar' if informe.modo == 'azar' else 'mancha'}")
+    print(f"Módulos invertidos: {informe.modulos_invertidos} de {informe.total_modulos} "
+          f"({informe.modulos_invertidos / informe.total_modulos:.1%})")
+    print(f"Bytes dañados: {informe.bytes_danados} de {informe.total_bytes}")
+    print(f"Bloques de corrección: {len(informe.por_bloque)} | fuera de su límite: {len(fuera)}")
+    print(f"Bloque más afectado: {mas_danado} bytes dañados, tolera {tolera} (nivel {nivel_correccion.value})")
+
+    if informe.recuperable:
+        print("Resultado esperado: todos los bloques están dentro de su límite, el QR debería poder leerse.")
+        print("(Un lector real puede fallar un poco antes del límite teórico.)")
+    else:
+        print("Resultado esperado: algún bloque supera su límite, el QR NO debería poder leerse.")
 
 def main():
     prueba = [
