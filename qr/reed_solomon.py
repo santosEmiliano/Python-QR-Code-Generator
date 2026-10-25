@@ -11,7 +11,7 @@ MensajeConCorreccion que consume P3 (etapa 5):
 
 from __future__ import annotations
 #Creado basado a un pipeline de pruebas, modificar si es necesario. 
-from contrato import BloqueCorreccion, ErrorQR, MensajeCodificado, MensajeConCorreccion
+from .contrato import BloqueCorreccion, ErrorQR, MensajeCodificado, MensajeConCorreccion
 
 # Aritmética en GF(256): sumar y restar es XOR; multiplicar y dividir usa dos
 # tablas de consulta (log/exp) construidas una vez. Polinomio primitivo del
@@ -110,12 +110,12 @@ def agregar_correccion(mensaje: MensajeCodificado,
     """Etapa 4: consume MensajeCodificado (P1) -> produce MensajeConCorreccion (P3).
 
     estructura_bloques: [(n_bloques, total, datos), ...]. Normalmente la provee
-    tables.ec_blocks(version, nivel) de P1; si se omite, se importa de tables.
+    tablas.bloques_correccion(version, nivel) de P1; si se omite, se importa de tablas.
     El parámetro existe para probar cualquier versión sin esperar esa tabla.
     """
     if estructura_bloques is None:
-        from tables import ec_blocks    # tabla del estándar, la mantiene P1
-        estructura_bloques = ec_blocks(mensaje.version, mensaje.nivel_correccion)
+        from .tablas import bloques_correccion    # tabla del estándar, la mantiene P1
+        estructura_bloques = bloques_correccion(mensaje.version, mensaje.nivel_correccion)
 
     cortes = _partir_en_bloques(mensaje.bytes_mensaje, estructura_bloques)
     bloques = [
