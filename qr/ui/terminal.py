@@ -1,4 +1,4 @@
-from qr.contrato import EntradaUsuario, Modo, ErrorQR, NivelCorreccion
+from qr.contrato import EntradaUsuario, Modo, ErrorQR, NivelCorreccion, ResultadoQR
 from qr.tablas import CAPACIDAD_ALFA, CAPACIDAD_BYTE, CAPACIDAD_NUM
 from qr.ui.qr_imagen import crear_imagen_qr
 
@@ -57,6 +57,8 @@ def qr_selector(tipo: int):
 
         # Aquí debe mandar a llamar la función para generar el QR
         # resultado = generar_qr(entrada)
+        # Manda a llamar para imprimir los resultados del QR
+        # mostrar_resultado(resultado)
     except ErrorQR as mensaje:
         print(f"Error al crear el QR: {mensaje}\n")
 
@@ -290,6 +292,35 @@ def imprimir_qr(matriz: list[list[bool]]):
 
     return resultado
 
+def mostrar_resultado(resultado: ResultadoQR):
+    datos_matriz = resultado.final.matriz
+    datos_mascara = resultado.final.mascara
+
+    # Imprimir Matriz
+    imprimir_qr(datos_matriz)
+
+    # Falta imprimir los datos de la matriz
+    print("############# DATOS DE LA MATRIZ #############")
+    print(f"Máscara usada: {datos_mascara}")
+
+    # Preguntar si quiere generar imagen
+    while True:
+        try:
+            opc = input("Desea generar una imagen de su QR?")
+
+            opc = opc.upper()
+
+            match opc:
+                case "S":
+                    crear_imagen_qr("QR", datos_matriz)
+                case "N":
+                    break
+                case _:
+                    raise ValueError
+
+        except ValueError:
+            print("ERROR: Valor no válido")
+    return
 
 def main():
     prueba = [
@@ -301,8 +332,6 @@ def main():
     ]
 
     print(imprimir_qr(prueba))
-
-    crear_imagen_qr("QR", prueba)
 
     menu()
 
