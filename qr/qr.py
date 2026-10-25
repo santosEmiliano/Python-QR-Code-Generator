@@ -21,7 +21,8 @@ __all__ = ["generar_qr"]
 
 def generar_qr(entrada: EntradaUsuario) -> ResultadoQR:
     """Genera el QR de `entrada`. Lanza una subclase de ErrorQR si el texto o los
-    parametros no sirven (ver contrato.py)."""
+    parametros no sirven (ver contrato.py). Si hace falta una version mayor a la 10
+    lanza NotImplementedError: las tablas de `tablas.py` aun no pasan de ahi."""
     mensaje = codificar_mensaje(entrada)
     correccion = agregar_correccion(mensaje)
     ordenada = ordenar_matriz(correccion.secuencia, mensaje.version)

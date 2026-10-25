@@ -1,5 +1,6 @@
 from qr.contrato import EntradaUsuario, Modo, ErrorQR, NivelCorreccion, ResultadoQR
 from qr.qr import generar_qr
+from qr.tablas import VERSION_MAX_CARGADA
 from qr.entrada import analizar_texto
 from qr.version import elegir_version
 from qr.ui.qr_imagen import crear_imagen_qr
@@ -61,6 +62,10 @@ def qr_selector(tipo: int):
 
     except ErrorQR as mensaje:
         print(f"Error al crear el QR: {mensaje}\n")
+    except NotImplementedError:
+        # Las tablas del estándar solo están cargadas hasta la versión 10
+        print(f"Error al crear el QR: por ahora solo se pueden generar QR hasta la versión "
+              f"{VERSION_MAX_CARGADA}. El texto o la versión pedida son demasiado grandes.\n")
 
 # Solo manda el texto y lo empaqueta de forma que lo entienda el sistema
 def qr_auto():
@@ -204,7 +209,7 @@ def ingresar_version_minima(texto: str, modo: str, nivel_correccion: NivelCorrec
 
     while True:
         try:
-            opt = input(f"\nIngrese la versión para su QR [Versión mínima permitida {min_ver}]"
+            opt = input(f"\nIngrese la versión para su QR [Versión mínima permitida {min_ver}, máxima {VERSION_MAX_CARGADA}]"
                         "\n> Para cancelar la opción tecleé 'n'\n"
                         "\n> Respuesta: ")
 
@@ -213,8 +218,9 @@ def ingresar_version_minima(texto: str, modo: str, nivel_correccion: NivelCorrec
                 break
             else:
                 opt = int(opt)
-                if opt < min_ver or opt > 40:
-                    print(f"No es posible crear un QR con las características específicadas [Versión mínima permitida {min_ver}]\n")
+                if opt < min_ver or opt > VERSION_MAX_CARGADA:
+                    print(f"No es posible crear un QR con las características específicadas "
+                          f"[Versión mínima permitida {min_ver}, máxima {VERSION_MAX_CARGADA}]\n")
                 else:
                     min_ver = opt
                     print(f"Versión seleccionada: {min_ver}")

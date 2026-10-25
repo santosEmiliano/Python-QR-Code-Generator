@@ -363,7 +363,7 @@ _ALINEACION: dict[int, list[int]] = {
 }
 
 # Version más alta con tablas por-version cargadas.
-_VERSION_MAX_CARGADA = 10
+VERSION_MAX_CARGADA = 10
 
 # Helpers privados
 
@@ -377,9 +377,9 @@ def _validar_version(version: int) -> None:
 def _exigir_cargada(version: int) -> None:
     """Corta con un mensaje claro si se pide una version todavía sin transcribir."""
     _validar_version(version)
-    if version > _VERSION_MAX_CARGADA:
+    if version > VERSION_MAX_CARGADA:
         raise NotImplementedError(
-            f"las tablas por-version solo están cargadas hasta la v{_VERSION_MAX_CARGADA}; "
+            f"las tablas por-version solo están cargadas hasta la v{VERSION_MAX_CARGADA}; "
             f"falta transcribir la v{version} de ISO/IEC 18004 (Tablas 7 y 9, Anexo E)"
         )
 
