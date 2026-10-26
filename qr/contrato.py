@@ -98,6 +98,9 @@ class EntradaUsuario:
     # Forzar uno de los 8 patrones de mascara (0..7). None: P4 elige el mejor.
     mascara: int | None = None
 
+    def __format__(self, format_spec: str):
+        return f"Texto: {self.texto} | Modo: {self.modo} | Nivel de Corrección {self.nivel_correccion} | Versión: {self.version_minima} | Máscara: {self.mascara}"
+
 # Etapas 1-3 - P1 - codificar_mensaje()
 
 @dataclass(frozen=True)

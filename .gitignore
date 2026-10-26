@@ -28,3 +28,7 @@ htmlcov/
 salida/
 *.qr.svg
 *.qr.png
+
+# Imágenes que genera la terminal al guardar el QR
+QR.png
+QR_danado.png
