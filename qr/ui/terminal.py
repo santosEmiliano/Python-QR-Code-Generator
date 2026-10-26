@@ -4,7 +4,7 @@ from qr.contrato import EntradaUsuario, Modo, ErrorQR, NivelCorreccion, Resultad
 from qr.danio import InformeDanio, MODOS_DANIO, danar_matriz, modulos_tolerados
 from qr.qr import generar_qr
 from qr.tablas import VERSION_MAX_CARGADA
-from qr.entrada import analizar_texto
+from qr.entrada import analizar_texto, validar_texto_para_modo
 from qr.version import elegir_version
 from qr.ui.qr_imagen import crear_imagen_qr
 
@@ -109,21 +109,13 @@ def ingresar_texto(modo: str):
             print("Acción Cancelada: Retornando a menú\n")
             break
         else:
-            match modo:
-                case Modo.NUMERICO.value:
-                    if texto.isnumeric():
-                        break
-                    else:
-                        print(f"Texto no cuadra con modo [{modo}]")
-                case Modo.ALFANUMERICO.value:
-                    if all(c.isalnum() or c.isspace() for c in texto):
-                        break
-                    else:
-                        print(f"Texto no cuadra con modo [{modo}]")
-                case Modo.BYTE.value:
-                    break
-                case "auto":
-                    break
+            if modo == "auto":
+                break
+            try:
+                validar_texto_para_modo(texto, Modo(modo))
+                break
+            except ErrorQR as error:
+                print(f"Texto no cuadra con modo [{modo}]: {error}")
 
     return texto
 
@@ -453,16 +445,6 @@ def mostrar_informe_danio(informe: InformeDanio, nivel_correccion: NivelCorrecci
         print("Resultado esperado: algún bloque supera su límite, el QR NO debería poder leerse.")
 
 def main():
-    prueba = [
-        [False,False,False,False,False],
-        [False,True,True,True,False],
-        [False, True, False, False, False],
-        [False, True, True, True, False],
-        [False, False, False, False, False]
-    ]
-
-    print(imprimir_qr(prueba))
-
     menu()
 
     print("\nFinalización del Programa: Tenga buen día")
