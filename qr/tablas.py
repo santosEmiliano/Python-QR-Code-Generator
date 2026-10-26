@@ -187,7 +187,7 @@ CAPACIDAD_ALFA: dict[int, dict[NivelCorreccion, int]] = {
         NivelCorreccion.L: 335,
         NivelCorreccion.M: 262,
         NivelCorreccion.Q: 189,
-        NivelCorreccion.H: 154,
+        NivelCorreccion.H: 143,
     },
     10: {
         NivelCorreccion.L: 395,
